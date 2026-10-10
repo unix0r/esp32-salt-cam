@@ -1,0 +1,28 @@
+# Camera tunables (board pins are in boards/). Merged into `salt_level: camera:` by ESPHome packages.
+#
+# The image is grayscale. Auto exposure/gain are ON while the tank photos are collected; once the
+# lighting is known, switch to fixed values - the white threshold is only meaningful under
+# constant exposure.
+
+substitutions:
+  camera_resolution: 320x240      # 160x120 | 320x240 | 640x480 | 800x600
+  camera_jpeg_quality: "50"       # frame2jpg quality, 1 (worst) .. 100 (best)
+  camera_sccb_driver: legacy      # legacy | new; "legacy" detects the OV3660 reliably on this board
+  camera_auto_exposure: "true"
+  camera_exposure_value: "300"    # 0..1200, only used when auto exposure is off
+  camera_auto_gain: "true"
+  camera_gain_value: "0"          # 0..30, only used when auto gain is off
+  camera_vertical_flip: "false"
+  camera_horizontal_mirror: "false"
+
+salt_level:
+  camera:
+    resolution: ${camera_resolution}
+    jpeg_quality: ${camera_jpeg_quality}
+    sccb_driver: ${camera_sccb_driver}
+    auto_exposure: ${camera_auto_exposure}
+    exposure_value: ${camera_exposure_value}
+    auto_gain: ${camera_auto_gain}
+    gain_value: ${camera_gain_value}
+    vertical_flip: ${camera_vertical_flip}
+    horizontal_mirror: ${camera_horizontal_mirror}

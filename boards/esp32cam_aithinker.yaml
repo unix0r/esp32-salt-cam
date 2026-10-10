@@ -1,0 +1,32 @@
+# AI-Thinker ESP32-CAM (ESP-32S module, 4 MB flash, PSRAM), OV3660 camera.
+# Pin map from the ESPHome esp32_camera docs (D4 = GPIO36; the older Salt-Cam project used 38).
+# GPIO16 is wired to PSRAM - do not use. GPIO4 is the white flash LED (salt_level: camera: flash_pin).
+#
+# The camera is driven by the salt_level component itself (retrying init), not by ESPHome's
+# esp32_camera, so there is no esp32_camera:/i2c: block here.
+
+esp32:
+  board: esp32cam
+  framework:
+    type: esp-idf
+  # ESP-IDF task watchdog (there is no user-facing `watchdog:` component in ESPHome).
+  watchdog_timeout: 15s
+
+# Fail hard at boot if PSRAM is missing; the default (true) would boot without it
+# and put the frame buffers into the scarce internal heap.
+psram:
+  mode: quad
+  speed: 40MHz
+  ignore_not_found: false
+
+salt_level:
+  camera:
+    data_pins: [GPIO5, GPIO18, GPIO19, GPIO21, GPIO36, GPIO39, GPIO34, GPIO35]
+    xclk_pin: GPIO0
+    pclk_pin: GPIO22
+    vsync_pin: GPIO25
+    href_pin: GPIO23
+    sccb_sda_pin: GPIO26
+    sccb_scl_pin: GPIO27
+    power_down_pin: GPIO32
+    flash_pin: GPIO4   # white flash LED, on (PWM) only while a frame is taken; shares the pin with the SD card

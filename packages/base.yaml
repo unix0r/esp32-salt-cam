@@ -1,0 +1,57 @@
+# Connectivity, safety net and housekeeping. No `api:` on purpose - Home Assistant via MQTT only.
+
+substitutions:
+  wifi_reboot_timeout: 10min   # ESPHome default 15min
+  mqtt_reboot_timeout: 10min   # ESPHome default 15min
+  mqtt_keepalive: 15s          # ESPHome default; short keepalive = faster dead-link detection on WLAN
+  safe_mode_num_attempts: "5"  # production value; the device file may raise it during bring-up
+  log_level: INFO              # production value; the device file may raise it during bring-up
+  timezone: Europe/Berlin
+
+esphome:
+  name: ${node_name}
+  friendly_name: ${friendly_name}
+  min_version: "2026.9.0"
+
+logger:
+  level: ${log_level}
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none        # stability over the few mA saved
+  reboot_timeout: ${wifi_reboot_timeout}
+  # Fallback AP if the WLAN is unreachable. Without captive_portal/web_server it is only useful for
+  # OTA (192.168.4.1); not verified on hardware.
+  ap:
+    ssid: "${node_name}-fallback"
+    password: !secret ap_password
+
+mqtt:
+  broker: !secret mqtt_broker
+  username: !secret mqtt_username
+  password: !secret mqtt_password
+  topic_prefix: ${mqtt_topic_prefix}
+  discovery: true
+  discovery_retain: true
+  keepalive: ${mqtt_keepalive}
+  reboot_timeout: ${mqtt_reboot_timeout}
+  idf_send_async: true         # publish from the MQTT task; a stalled link blocked the main loop for 13 s before
+  publish_nan_as_none: true    # a failed measurement shows as "unknown" in HA instead of the string "nan"
+  log_topic:                   # only warnings/errors over MQTT; full logs stay on serial
+    topic: ${mqtt_topic_prefix}/log
+    level: WARN
+
+ota:
+  - platform: esphome
+    encryption:
+      key: !secret ota_key
+
+# Boot-loop protection: after N boots that never became "good", only WLAN + OTA come up.
+safe_mode:
+  num_attempts: ${safe_mode_num_attempts}
+  boot_is_good_after: 1min
+
+time:
+  - platform: sntp
+    timezone: ${timezone}

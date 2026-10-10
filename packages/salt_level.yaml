@@ -1,0 +1,195 @@
+# Measurement component + its entities.
+#
+# A capture (interval timer, "Jetzt messen", or start-up) takes one grayscale frame, computes the
+# white share (pixels >= Schwellwert) and the fill level from it, and publishes the image.
+# Level = white share mapped linearly between "Referenz leer" (0 %) and "Referenz voll" (100 %).
+# The buttons "Tank voll" / "Tank leer" store the NEXT measurement as that reference.
+#
+# All tunables are number entities: they survive reboots (restore_value) and their MQTT command
+# topics are retained, so values also survive a broker/HA restart.
+
+substitutions:
+  image_max_bytes: "100000"     # larger JPEGs are dropped with IMAGE_TOO_LARGE, not published
+  white_threshold: "115"        # default gray value 0..255 from which a pixel counts as salt
+  measure_interval_hours: "12"  # default measuring interval
+  flash_percent: "50"           # default flash LED brightness while a frame is taken, 0..100
+
+external_components:
+  - source:
+      type: local
+      path: components
+    components: [salt_level]
+
+salt_level:
+  id: salt
+  image_topic: ${mqtt_topic_prefix}/camera/image
+  meta_topic: ${mqtt_topic_prefix}/camera/meta
+  max_image_bytes: ${image_max_bytes}
+  white_threshold: ${white_threshold}
+  threshold_number: threshold_number
+  interval_number: interval_number
+  exposure_number: exposure_number
+  gain_number: gain_number
+  flash_number: flash_number
+  full_reference_number: full_reference_number
+  empty_reference_number: empty_reference_number
+  level_sensor: level_sensor
+  white_share_sensor: white_share_sensor
+  error_text_sensor: last_error_text
+
+number:
+  - platform: template
+    id: threshold_number
+    name: "Schwellwert"
+    icon: mdi:contrast-circle
+    min_value: 0
+    max_value: 255
+    step: 1
+    initial_value: ${white_threshold}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+    command_retain: true
+
+  - platform: template
+    id: interval_number
+    name: "Messintervall"
+    icon: mdi:timer-outline
+    unit_of_measurement: "h"
+    min_value: 0.25
+    max_value: 168
+    step: 0.25
+    initial_value: ${measure_interval_hours}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+    command_retain: true
+
+  - platform: template
+    id: exposure_number
+    name: "Belichtung"
+    icon: mdi:brightness-6
+    # 0 = automatic exposure and gain; any other value fixes both (needs a constant light source).
+    min_value: 0
+    max_value: 1200
+    step: 1
+    initial_value: 0
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+    command_retain: true
+
+  - platform: template
+    id: gain_number
+    name: "Gain"
+    icon: mdi:signal
+    # Only used when Belichtung is not 0.
+    min_value: 0
+    max_value: 30
+    step: 1
+    initial_value: 0
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+    command_retain: true
+
+  - platform: template
+    id: flash_number
+    name: "Blitz"
+    icon: mdi:flash
+    # Brightness of the flash LED while a frame is taken (PWM); 0 = no flash.
+    # Changing it changes the image brightness, so re-check Belichtung and the references afterwards.
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 5
+    initial_value: ${flash_percent}
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+    command_retain: true
+
+  - platform: template
+    id: full_reference_number
+    name: "Referenz voll"
+    icon: mdi:cup-water
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 0.1
+    initial_value: 100
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+    command_retain: true
+
+  - platform: template
+    id: empty_reference_number
+    name: "Referenz leer"
+    icon: mdi:cup-outline
+    unit_of_measurement: "%"
+    min_value: 0
+    max_value: 100
+    step: 0.1
+    initial_value: 0
+    optimistic: true
+    restore_value: true
+    mode: box
+    entity_category: config
+    command_retain: true
+
+sensor:
+  - platform: template
+    id: level_sensor
+    name: "Füllstand"
+    icon: mdi:shaker-outline
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    state_class: measurement
+    update_interval: never
+
+  - platform: template
+    id: white_share_sensor
+    name: "Weissanteil"
+    icon: mdi:white-balance-sunny
+    unit_of_measurement: "%"
+    accuracy_decimals: 1
+    state_class: measurement
+    entity_category: diagnostic
+    update_interval: never
+
+text_sensor:
+  - platform: template
+    id: last_error_text
+    name: "Letzter Fehler"
+    icon: mdi:alert-circle-outline
+    entity_category: diagnostic
+
+button:
+  - platform: template
+    name: "Jetzt messen"
+    id: measure_now
+    on_press:
+      - lambda: id(salt)->trigger_capture();
+
+  - platform: template
+    name: "Tank voll"
+    id: calibrate_full_button
+    icon: mdi:tray-full
+    entity_category: config
+    on_press:
+      - lambda: id(salt)->calibrate_full();
+
+  - platform: template
+    name: "Tank leer"
+    id: calibrate_empty_button
+    icon: mdi:tray-remove
+    entity_category: config
+    on_press:
+      - lambda: id(salt)->calibrate_empty();

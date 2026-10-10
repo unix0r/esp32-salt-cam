@@ -1,0 +1,15 @@
+# Tank 1 - device entry point.
+# Everything device specific lives in `substitutions`; the logic is in packages/.
+# A second tank = copy this file, change node_name / friendly_name / mqtt_topic_prefix.
+
+substitutions:
+  node_name: saltcam-tank1
+  friendly_name: "Salztank 1"
+  mqtt_topic_prefix: saltcam/tank1
+
+packages:
+  board: !include boards/esp32cam_aithinker.yaml
+  base: !include packages/base.yaml
+  camera: !include packages/camera.yaml
+  diagnostics: !include packages/diagnostics.yaml
+  salt_level: !include packages/salt_level.yaml

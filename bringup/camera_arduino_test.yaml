@@ -1,0 +1,43 @@
+# BRING-UP CROSS-CHECK, not part of the product firmware.
+# Same camera pins as boards/esp32cam_aithinker.yaml but on the Arduino framework, which ships a
+# different esp32-camera driver version and SCCB code path. If the sensor is detected here and not
+# in the ESP-IDF build, the fault is in the software stack; if not, look at the hardware.
+#   scripts/esphome.sh compile bringup/camera_arduino_test.yaml
+
+esphome:
+  name: camtest-arduino
+
+esp32:
+  board: esp32cam
+  framework:
+    type: arduino
+
+psram:
+  mode: quad
+  speed: 40MHz
+  ignore_not_found: false
+
+logger:
+  level: DEBUG
+
+i2c:
+  - id: camera_i2c
+    sda: GPIO26
+    scl: GPIO27
+    scan: true
+
+esp32_camera:
+  name: "Camera"
+  internal: true
+  i2c_id: camera_i2c
+  external_clock:
+    pin: GPIO0
+    frequency: 20MHz
+  data_pins: [GPIO5, GPIO18, GPIO19, GPIO21, GPIO36, GPIO39, GPIO34, GPIO35]
+  vsync_pin: GPIO25
+  href_pin: GPIO23
+  pixel_clock_pin: GPIO22
+  power_down_pin: GPIO32
+  resolution: 640x480
+  jpeg_quality: 12
+  idle_framerate: 0 fps

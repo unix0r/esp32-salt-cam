@@ -1,0 +1,34 @@
+# Health entities. All diagnostic-category so they stay out of the main HA device card.
+# Heap/PSRAM numbers show whether the MQTT image publish fits on the classic ESP32.
+
+debug:
+  update_interval: 60s
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+    entity_category: diagnostic
+  - platform: uptime
+    name: "Uptime"
+    entity_category: diagnostic
+  - platform: debug
+    free:
+      name: "Heap Free"
+      entity_category: diagnostic
+    block:
+      name: "Heap Largest Block"
+      entity_category: diagnostic
+    psram:
+      name: "PSRAM Free"
+      entity_category: diagnostic
+
+text_sensor:
+  - platform: debug
+    reset_reason:
+      name: "Reset Reason"
+      entity_category: diagnostic
+  - platform: wifi_info
+    ip_address:
+      name: "IP Address"
+      entity_category: diagnostic

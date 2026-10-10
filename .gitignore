@@ -1,0 +1,14 @@
+# Secrets
+secrets.yaml
+
+# ESPHome / PlatformIO build output
+.esphome/
+**/.esphome/
+build/
+
+# Python
+__pycache__/
+*.pyc
+
+# Local tooling
+.claude/
